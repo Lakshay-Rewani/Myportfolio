@@ -6,7 +6,13 @@ import { motion, useMotionValue, useSpring } from "framer-motion";
 export default function CustomCursor() {
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [isTouchDevice] = useState(() => {
+    // Detect touch/non-hover devices on initial render
+    if (typeof window === "undefined") return true;
+    const canHover = typeof window.matchMedia === "function" && window.matchMedia("(hover: hover)").matches;
+    const isTouch = typeof navigator !== "undefined" && navigator.maxTouchPoints > 0;
+    return !canHover || isTouch;
+  });
 
   // Position of the mouse
   const mouseX = useMotionValue(0);
@@ -17,39 +23,27 @@ export default function CustomCursor() {
   const ringY = useSpring(mouseY, { stiffness: 250, damping: 25 });
 
   useEffect(() => {
-    // Detect touch device to disable custom cursor
-    const checkTouch = () => {
-      setIsTouchDevice(
-        "ontouchstart" in window || navigator.maxTouchPoints > 0
-      );
-    };
-    checkTouch();
+    if (isTouchDevice) return;
 
     const moveMouse = (e: MouseEvent) => {
       mouseX.set(e.clientX);
       mouseY.set(e.clientY);
-      if (!isVisible) setIsVisible(true);
-    };
-
-    const handleMouseLeave = () => {
-      setIsVisible(false);
-    };
-
-    const handleMouseEnter = () => {
       setIsVisible(true);
     };
 
+    const handleMouseLeave = () => setIsVisible(false);
+    const handleMouseEnter = () => setIsVisible(true);
+
     const handleMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
+      const target = e.target as HTMLElement | null;
       if (!target) return;
-      
-      // Expand cursor on links, buttons, glass-cards, or elements with cursor-pointer
-      const isInteractive = 
-        target.tagName === "A" || 
-        target.tagName === "BUTTON" || 
-        target.closest("a") || 
-        target.closest("button") || 
-        target.closest(".glass-card") || 
+
+      const isInteractive =
+        target.tagName === "A" ||
+        target.tagName === "BUTTON" ||
+        !!target.closest("a") ||
+        !!target.closest("button") ||
+        !!target.closest(".glass-card") ||
         window.getComputedStyle(target).cursor === "pointer";
 
       setIsHovered(!!isInteractive);
@@ -66,7 +60,7 @@ export default function CustomCursor() {
       document.removeEventListener("mouseenter", handleMouseEnter);
       document.removeEventListener("mouseover", handleMouseOver);
     };
-  }, [mouseX, mouseY, isVisible]);
+  }, [isTouchDevice, mouseX, mouseY]);
 
   if (isTouchDevice || !isVisible) return null;
 

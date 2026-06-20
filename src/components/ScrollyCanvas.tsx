@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useScroll, useTransform } from "framer-motion";
 
 const FRAME_COUNT = 120; // 000 to 119
+const MOBILE_SAMPLE_COUNT = 30; // reduced frames for mobile to save memory/bandwidth
 
 export default function ScrollyCanvas({
   children,
@@ -19,19 +20,35 @@ export default function ScrollyCanvas({
   useEffect(() => {
     const loadedImages: HTMLImageElement[] = [];
     let loadedCount = 0;
-    
-    for (let i = 0; i < FRAME_COUNT; i++) {
+
+    // Decide whether to load full frame set or a sampled subset on mobile
+    const isTouch = typeof navigator !== "undefined" && navigator.maxTouchPoints > 0;
+    const isNarrow = typeof window !== "undefined" && window.innerWidth < 768;
+    const useSampling = isTouch || isNarrow;
+
+    // Build an index list to load. On mobile we sample a smaller set evenly spaced.
+    const indices: number[] = [];
+    if (useSampling) {
+      for (let i = 0; i < MOBILE_SAMPLE_COUNT; i++) {
+        const mapped = Math.round((i * (FRAME_COUNT - 1)) / Math.max(1, MOBILE_SAMPLE_COUNT - 1));
+        indices.push(mapped);
+      }
+    } else {
+      for (let i = 0; i < FRAME_COUNT; i++) indices.push(i);
+    }
+
+    for (const idx of indices) {
       const img = new window.Image();
-      const indexStr = i.toString().padStart(3, "0");
+      const indexStr = idx.toString().padStart(3, "0");
       img.src = `/sequence/frame_${indexStr}_delay-0.066s.png`;
-      
+
       img.onload = () => {
         loadedCount++;
-        if (loadedCount === FRAME_COUNT) {
+        if (loadedCount === indices.length) {
           setImages(loadedImages);
         }
       };
-      
+
       loadedImages.push(img);
     }
   }, []);
@@ -40,30 +57,41 @@ export default function ScrollyCanvas({
   const frameIndex = useTransform(scrollYProgress, [0, 1], [0, FRAME_COUNT - 1]);
 
   const updateCanvas = useCallback((latest: number) => {
-    if (!canvasRef.current || images.length !== FRAME_COUNT) return;
+    if (!canvasRef.current || images.length === 0) return;
     const context = canvasRef.current.getContext("2d");
     if (!context) return;
-    
+
     const frame = Math.round(latest);
-    const img = images[Math.min(frame, FRAME_COUNT - 1)];
+
+    // If we sampled frames for mobile, map the full-range frame index into the sampled images array.
+    const sampledCount = images.length;
+    const mappedIndex = Math.round((frame * (sampledCount - 1)) / Math.max(1, FRAME_COUNT - 1));
+    const img = images[Math.min(Math.max(0, mappedIndex), sampledCount - 1)];
     
     if (img && img.complete) {
       const canvas = canvasRef.current;
       const ctx = context;
-      const cw = canvas.width;
-      const ch = canvas.height;
+      // Cap canvas pixel dimensions to avoid huge allocations on small devices
+      const MAX_PIXELS = 2048 * (window.devicePixelRatio || 1);
+      const cw = Math.min(canvas.width, MAX_PIXELS);
+      const ch = Math.min(canvas.height, MAX_PIXELS);
       const iw = img.width;
       const ih = img.height;
 
+      // Calculate scale to fill the canvas (cover)
       const hRatio = cw / iw;
       const vRatio = ch / ih;
       const ratio = Math.max(hRatio, vRatio);
       const cwFit = iw * ratio;
       const chFit = ih * ratio;
 
+      // Center horizontally
       const x = (cw - cwFit) / 2;
-      const y = (ch - chFit) / 2;
-      ctx.clearRect(0, 0, cw, ch);
+      
+      // Always shift the image up to prioritize the face
+      const y = (ch - chFit) * 0.7; // 70% from top (shifts up even more)
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
       ctx.drawImage(img, 0, 0, iw, ih, x, y, cwFit, chFit);
@@ -99,14 +127,15 @@ export default function ScrollyCanvas({
     const handleResize = () => {
       if (canvasRef.current) {
         const dpr = window.devicePixelRatio || 1;
-        canvasRef.current.width = window.innerWidth * dpr;
-        canvasRef.current.height = window.innerHeight * dpr;
+        const MAX_PIXELS = 2048 * dpr;
+        canvasRef.current.width = Math.min(window.innerWidth * dpr, MAX_PIXELS);
+        canvasRef.current.height = Math.min(window.innerHeight * dpr, MAX_PIXELS);
         canvasRef.current.style.width = window.innerWidth + "px";
         canvasRef.current.style.height = window.innerHeight + "px";
         
         const ctx = canvasRef.current.getContext("2d");
         if (ctx) {
-          ctx.scale(dpr, dpr);
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         }
         
         // Trigger a re-draw immediately after resize
