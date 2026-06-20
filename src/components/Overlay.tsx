@@ -20,17 +20,19 @@ export default function Overlay() {
 
   return (
     <div className="absolute inset-0 w-full h-full text-white">
-      {/* Section 1 */}
+      {/* Hero Text */}
       <motion.div
         style={{ opacity: opacity1, y: y1, scale: scale1 }}
-        className="absolute inset-x-0 top-[48%] md:top-[40%] -translate-y-[48%] md:-translate-y-[40%] flex flex-col items-center text-center px-4 md:px-8"
+        className="absolute inset-x-0 bottom-8 md:top-[40%] md:bottom-auto md:-translate-y-[40%] flex flex-col items-center text-center px-4 md:px-8"
       >
-        <h1 className="text-4xl sm:text-5xl md:text-8xl font-bold tracking-tighter mb-4 md:mb-6 bg-gradient-to-br from-white to-white/40 bg-clip-text text-transparent">
-          Lakshay Rewani
-        </h1>
-        <p className="text-lg sm:text-xl md:text-3xl text-gray-300 max-w-lg font-light tracking-wide">
-          Aspiring DevOps Engineer.
-        </p>
+        <div className="w-full max-w-3xl rounded-[2rem] bg-black/40 border border-white/10 backdrop-blur-xl p-6 md:p-0 md:bg-transparent md:border-transparent md:backdrop-blur-0">
+          <h1 className="text-4xl sm:text-5xl md:text-8xl font-bold tracking-tighter mb-4 md:mb-6 bg-gradient-to-br from-white to-white/40 bg-clip-text text-transparent">
+            Lakshay Rewani
+          </h1>
+          <p className="text-lg sm:text-xl md:text-3xl text-gray-300 max-w-lg mx-auto font-light tracking-wide">
+            Aspiring DevOps Engineer.
+          </p>
+        </div>
       </motion.div>
 
       {/* Section 2 */}

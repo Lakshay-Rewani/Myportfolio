@@ -71,27 +71,26 @@ export default function ScrollyCanvas({
     if (img && img.complete) {
       const canvas = canvasRef.current;
       const ctx = context;
-      // Cap canvas pixel dimensions to avoid huge allocations on small devices
-      const MAX_PIXELS = 2048 * (window.devicePixelRatio || 1);
-      const cw = Math.min(canvas.width, MAX_PIXELS);
-      const ch = Math.min(canvas.height, MAX_PIXELS);
+      const dpr = window.devicePixelRatio || 1;
+      const cssWidth = canvas.width / dpr;
+      const cssHeight = canvas.height / dpr;
       const iw = img.width;
       const ih = img.height;
 
-      // Calculate scale to fill the canvas (cover)
-      const hRatio = cw / iw;
-      const vRatio = ch / ih;
-      const ratio = Math.max(hRatio, vRatio);
+      const hRatio = cssWidth / iw;
+      const vRatio = cssHeight / ih;
+      const isMobile = window.innerWidth < 768;
+
+      // On mobile, use contain-style scaling and top alignment so the face is never cropped.
+      // On desktop, preserve the original cover behavior for a premium full-screen hero.
+      const ratio = isMobile ? Math.min(hRatio, vRatio) : Math.max(hRatio, vRatio);
       const cwFit = iw * ratio;
       const chFit = ih * ratio;
 
-      // Center horizontally
-      const x = (cw - cwFit) / 2;
-      
-      // Always shift the image up to prioritize the face
-      const y = (ch - chFit) * 0.7; // 70% from top (shifts up even more)
+      const x = (cssWidth - cwFit) / 2;
+      const y = isMobile ? 0 : (cssHeight - chFit) * 0.35;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, cssWidth, cssHeight);
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
       ctx.drawImage(img, 0, 0, iw, ih, x, y, cwFit, chFit);
@@ -149,12 +148,13 @@ export default function ScrollyCanvas({
 
   return (
     <div className="relative h-[800vh] w-full bg-[#121212]">
-      <div className="sticky top-0 h-screen w-full overflow-hidden">
+      <div className="sticky top-0 h-screen w-full overflow-visible md:overflow-hidden">
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 w-full h-full object-cover bg-[#121212]"
+          className="absolute inset-0 w-full h-full bg-[#121212] pointer-events-none"
+          aria-hidden="true"
         />
-        <div className="absolute inset-0 z-10 pointer-events-none">
+        <div className="absolute inset-0 z-10">
           {children}
         </div>
       </div>
