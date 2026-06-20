@@ -40,6 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Ignore large PDFs and exported documents
-*.pdf
-public/*.pdf
+# PDFs are needed for portfolio assets and should be deployed
+!*.pdf
+!public/*.pdf
