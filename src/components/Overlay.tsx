@@ -23,7 +23,7 @@ export default function Overlay() {
       {/* Section 1 */}
       <motion.div
         style={{ opacity: opacity1, y: y1, scale: scale1 }}
-        className="absolute inset-x-0 top-[40%] -translate-y-[40%] flex flex-col items-center text-center px-4 md:px-8"
+        className="absolute inset-x-0 top-[48%] md:top-[40%] -translate-y-[48%] md:-translate-y-[40%] flex flex-col items-center text-center px-4 md:px-8"
       >
         <h1 className="text-4xl sm:text-5xl md:text-8xl font-bold tracking-tighter mb-4 md:mb-6 bg-gradient-to-br from-white to-white/40 bg-clip-text text-transparent">
           Lakshay Rewani
@@ -36,7 +36,7 @@ export default function Overlay() {
       {/* Section 2 */}
       <motion.div
         style={{ opacity: opacity2, y: y2 }}
-        className="absolute left-4 md:left-24 top-1/3 flex flex-col max-w-[52rem]"
+        className="hidden md:absolute md:left-24 md:top-1/3 md:flex md:flex-col md:max-w-[52rem]"
       >
         <h2 className="text-4xl md:text-7xl font-semibold tracking-tighter leading-[1.1] max-w-2xl">
           Building scalable <br />
@@ -47,7 +47,7 @@ export default function Overlay() {
       {/* Section 3 */}
       <motion.div
         style={{ opacity: opacity3, y: y3 }}
-        className="absolute right-4 md:right-24 bottom-1/4 flex flex-col text-right max-w-[52rem]"
+        className="hidden md:absolute md:right-24 md:bottom-1/4 md:flex md:flex-col md:text-right md:max-w-[52rem]"
       >
         <h2 className="text-4xl md:text-7xl font-semibold tracking-tighter leading-[1.1] max-w-2xl ml-auto">
           Specializing in OpenShift & <br />
